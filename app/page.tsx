@@ -185,6 +185,17 @@ export default function Page() {
                   className="w-64 mt-2 border rounded shadow"
                 />
               )}
+
+              {product.phone && (
+                <a
+                  href={`https://api.whatsapp.com/send/?phone=852${product.phone}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block mt-2 px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"
+                >
+                  聯絡賣家
+                </a>
+)}
             </div>
           ))}
         </div>
