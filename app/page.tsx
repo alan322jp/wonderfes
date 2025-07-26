@@ -1,46 +1,50 @@
 'use client';
-import { useEffect, useState } from 'react';
+
+import { useState } from 'react';
 import { db } from './firebase';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, addDoc } from 'firebase/firestore';
 
-export type Product = {
-  id: string;
-  name: string;
-  image: string;
-  remark: string;
-  price: number;
-  bought: boolean;
-};
+const AddProductForm = () => {
+  const [name, setName] = useState('');
+  const [price, setPrice] = useState('');
 
-export default function Home() {
-  const [products, setProducts] = useState<Product[]>([]);
-
-  const fetchProducts = async () => {
-    const querySnapshot = await getDocs(collection(db, 'products'));
-    const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Product[];
-    setProducts(data);
+  const handleAdd = async () => {
+    if (!name || !price) return alert('請填入所有欄位');
+    await addDoc(collection(db, 'products'), {
+      name,
+      price: Number(price),
+      bought: false,
+      image: '',
+      remark: ''
+    });
+    setName('');
+    setPrice('');
+    alert('已儲存！請重新整理查看');
   };
 
-  useEffect(() => {
-    fetchProducts();
-  }, []);
-
   return (
-    <main className="p-4 max-w-2xl mx-auto">
-      <h1 className="text-xl font-bold mb-4">🛒 Product List</h1>
-      <ul className="space-y-2">
-        {products.map((product) => (
-          <li key={product.id} className="border p-3 rounded shadow">
-            <img src={product.image} alt={product.name} className="w-32 mb-2" />
-            <div className="font-semibold">{product.name}</div>
-            <div className="text-sm">{product.remark}</div>
-            <div className="text-red-500">${product.price}</div>
-            <div className={`text-sm ${product.bought ? 'text-green-600' : 'text-gray-400'}`}>
-              {product.bought ? 'Bought' : 'Not bought'}
-            </div>
-          </li>
-        ))}
-      </ul>
-    </main>
+    <div className="mb-6 space-y-2">
+      <input
+        className="border px-2 py-1"
+        placeholder="產品名稱"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+      />
+      <input
+        className="border px-2 py-1 ml-2"
+        placeholder="金額"
+        type="number"
+        value={price}
+        onChange={(e) => setPrice(e.target.value)}
+      />
+      <button
+        onClick={handleAdd}
+        className="bg-blue-500 text-white px-4 py-1 ml-2"
+      >
+        儲存
+      </button>
+    </div>
   );
-}
+};
+
+export default AddProductForm;
