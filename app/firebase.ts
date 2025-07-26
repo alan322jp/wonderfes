@@ -3,13 +3,13 @@ import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCutpRL9d8xIYSyOXZgJNFrCCFiDcLN2ww",
-  authDomain: "wonderfes-30bfe.firebaseapp.com",
-  projectId: "wonderfes-30bfe",
-  storageBucket: "wonderfes-30bfe.firebasestorage.app",
-  messagingSenderId: "140845688414",
-  appId: "1:140845688414:web:53efff7e05e8f19b7e36cf",
-  measurementId: "G-Y1052GWH83"
+  apiKey: "AIzaSyDf5RvoJ64xac-9K1Asq9dAufvOCPrNliY",
+  authDomain: "wonderfes2025.firebaseapp.com",
+  projectId: "wonderfes2025",
+  storageBucket: "wonderfes2025.firebasestorage.app",
+  messagingSenderId: "675206214247",
+  appId: "1:675206214247:web:b332f6e80508f4cf0cdac2",
+  measurementId: "G-NL8NSGMJ3Z"
 };
 
 const app = initializeApp(firebaseConfig);
