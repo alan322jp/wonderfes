@@ -193,7 +193,7 @@ export default function Page() {
                   rel="noopener noreferrer"
                   className="inline-block mt-2 px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"
                 >
-                  聯絡賣家
+                  聯絡買家
                 </a>
 )}
             </div>
