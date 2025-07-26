@@ -187,8 +187,11 @@ export default function Page() {
               )}
 
               {product.phone && (
+
+              const cleanPhone = product.phone.replace(/[^\d]/g, ''); // 只保留數字
+              
                 <a
-                  href={`https://api.whatsapp.com/send/?phone=852${product.phone}&text&type=phone_number&app_absent=0`}
+                  href={`https://api.whatsapp.com/send/?phone=852${cleanPhone}&text&type=phone_number&app_absent=0`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-block mt-2 px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"
