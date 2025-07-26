@@ -7,9 +7,8 @@ import {
   collection,
   getDocs,
   addDoc,
-  doc,
   updateDoc,
-  Timestamp,
+  doc,
 } from 'firebase/firestore';
 import { db } from './firebase';
 
@@ -21,13 +20,13 @@ type Product = {
   difficulty: string;
   remark: string;
   imageUrl: string;
-  createdAt?: Timestamp;
-  status?: 'not_bought' | 'bought';
+  isBought: boolean;
 };
 
 export default function Page() {
   const [products, setProducts] = useState<Product[]>([]);
-  const [formData, setFormData] = useState<Omit<Product, 'id' | 'createdAt' | 'status'>>({
+  const [tab, setTab] = useState<'add' | 'notBought' | 'bought'>('add');
+  const [formData, setFormData] = useState<Omit<Product, 'id' | 'isBought'>>({
     phone: '',
     location: '',
     price: '',
@@ -35,7 +34,6 @@ export default function Page() {
     remark: '',
     imageUrl: '',
   });
-  const [activeTab, setActiveTab] = useState<'add' | 'not_bought' | 'bought'>('add');
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -49,23 +47,35 @@ export default function Page() {
     fetchProducts();
   }, []);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    id?: string
+  ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (id) {
+      setProducts((prev) =>
+        prev.map((item) =>
+          item.id === id ? { ...item, [name]: value } : item
+        )
+      );
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const handleBlur = async (id: string, name: string, value: string) => {
+    await updateDoc(doc(db, 'products', id), { [name]: value });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const productData: Product = {
+    const newProduct: Product = {
       ...formData,
-      createdAt: Timestamp.now(),
-      status: 'not_bought',
+      isBought: false,
     };
-
-    const docRef = await addDoc(collection(db, 'products'), productData);
-    setProducts((prev) => [...prev, { ...productData, id: docRef.id }]);
-
+    const docRef = await addDoc(collection(db, 'products'), newProduct);
+    setProducts((prev) => [...prev, { ...newProduct, id: docRef.id }]);
     setFormData({
       phone: '',
       location: '',
@@ -76,73 +86,104 @@ export default function Page() {
     });
   };
 
-  const handleUpdate = async (id: string | undefined, updatedFields: Partial<Product>) => {
-    if (!id) return;
-    const docRef = doc(db, 'products', id);
-    await updateDoc(docRef, updatedFields);
+  const toggleBought = async (id: string, isBought: boolean) => {
+    await updateDoc(doc(db, 'products', id), { isBought: !isBought });
     setProducts((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, ...updatedFields } : p))
+      prev.map((p) =>
+        p.id === id ? { ...p, isBought: !isBought } : p
+      )
     );
   };
 
-  const toggleStatus = async (id: string | undefined, currentStatus: 'not_bought' | 'bought') => {
-    const newStatus = currentStatus === 'not_bought' ? 'bought' : 'not_bought';
-    await handleUpdate(id, { status: newStatus });
-  };
-
-  const filteredProducts =
-    activeTab === 'add'
-      ? []
-      : products.filter((p) => p.status === (activeTab === 'not_bought' ? 'not_bought' : 'bought'));
+  const filteredProducts = products.filter((p) =>
+    tab === 'notBought' ? !p.isBought : tab === 'bought' ? p.isBought : true
+  );
 
   return (
-    <main className="p-4 max-w-3xl mx-auto">
-      <div className="flex space-x-2 mb-4">
-        <button onClick={() => setActiveTab('add')}>➕ 新增</button>
-        <button onClick={() => setActiveTab('not_bought')}>📦 未買</button>
-        <button onClick={() => setActiveTab('bought')}>✅ 已買</button>
+    <main className="p-4 max-w-4xl mx-auto">
+      <div className="flex gap-4 mb-4">
+        <button onClick={() => setTab('add')}>➕ 新增</button>
+        <button onClick={() => setTab('notBought')}>🛒 未買</button>
+        <button onClick={() => setTab('bought')}>✅ 已買</button>
       </div>
 
-      {activeTab === 'add' ? (
+      {tab === 'add' && (
         <form onSubmit={handleSubmit} className="space-y-3 mb-6">
-          {['phone', 'location', 'price', 'difficulty', 'remark', 'imageUrl'].map((field) => (
-            <input
-              key={field}
-              name={field}
-              value={(formData as any)[field]}
-              onChange={handleInputChange}
-              placeholder={field}
-              className="w-full border px-3 py-2 rounded"
-            />
+          {[
+            ['phone', '電話'],
+            ['location', '位置'],
+            ['price', '價錢'],
+            ['difficulty', '難買度'],
+            ['remark', '備註'],
+            ['imageUrl', '圖片 URL'],
+          ].map(([field, label]) => (
+            <label key={field} className="block">
+              {label}：
+              <input
+                name={field}
+                value={(formData as any)[field]}
+                onChange={handleInputChange}
+                className="w-full border px-3 py-2 rounded mt-1"
+              />
+            </label>
           ))}
-          <button type="submit" className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+          <button
+            type="submit"
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
             儲存
           </button>
         </form>
-      ) : (
+      )}
+
+      {tab !== 'add' && (
         <div className="grid gap-4">
           {filteredProducts.map((product) => (
             <div
               key={product.id}
               className={`border rounded p-3 shadow ${
-                product.status === 'bought' ? 'bg-green-100' : 'bg-white'
+                product.isBought ? 'bg-green-100' : 'bg-yellow-50'
               }`}
             >
-              <input
-                type="checkbox"
-                checked={product.status === 'bought'}
-                onChange={() => toggleStatus(product.id, product.status || 'not_bought')}
-              />
-              {['phone', 'location', 'price', 'difficulty', 'remark', 'imageUrl'].map((field) => (
+              <label className="flex items-center mb-2">
                 <input
-                  key={field}
-                  defaultValue={(product as any)[field]}
-                  onBlur={(e) => handleUpdate(product.id, { [field]: e.target.value })}
-                  className="w-full border rounded px-2 py-1 my-1"
+                  type="checkbox"
+                  checked={product.isBought}
+                  onChange={() =>
+                    toggleBought(product.id!, product.isBought)
+                  }
+                  className="mr-2"
                 />
+                {product.isBought ? '✅ 已買' : '🛒 未買'}
+              </label>
+
+              {[
+                ['phone', '電話'],
+                ['location', '位置'],
+                ['price', '價錢'],
+                ['difficulty', '難買度'],
+                ['remark', '備註'],
+                ['imageUrl', '圖片 URL'],
+              ].map(([field, label]) => (
+                <label key={field} className="block mb-1">
+                  {label}：
+                  <input
+                    name={field}
+                    value={(product as any)[field]}
+                    onChange={(e) => handleInputChange(e, product.id)}
+                    onBlur={(e) =>
+                      handleBlur(product.id!, field, e.target.value)
+                    }
+                    className="w-full border px-3 py-2 rounded mt-1"
+                  />
+                </label>
               ))}
               {product.imageUrl && (
-                <img src={product.imageUrl} alt="img" className="w-32 mt-2 border" />
+                <img
+                  src={product.imageUrl}
+                  alt="Product"
+                  className="w-64 mt-2 border rounded shadow"
+                />
               )}
             </div>
           ))}
