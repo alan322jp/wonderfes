@@ -1,15 +1,18 @@
+// app/firebase.ts
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
+import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
-apiKey: "AIzaSyCutpRL9d8xIYSyOXZgJNFrCCFiDcLN2ww",
-  authDomain: "wonderfes-30bfe.firebaseapp.com",
-  projectId: "wonderfes-30bfe",
-  storageBucket: "wonderfes-30bfe.firebasestorage.app",
-  messagingSenderId: "140845688414",
-  appId: "1:140845688414:web:53efff7e05e8f19b7e36cf",
-  measurementId: "G-Y1052GWH83"
+  apiKey: 'AIzaSyCLv1BebayVjCrAHLPn-d6waTrACU8o45o',
+  authDomain: 'auctiondemo-764ce.firebaseapp.com',
+  projectId: 'auctiondemo-764ce',
+  storageBucket: 'auctiondemo-764ce.appspot.com',
+  messagingSenderId: '341789294820',
+  appId: '1:341789294820:web:ceef3652d9f7f3939a6cf1',
 };
 
 const app = initializeApp(firebaseConfig);
+
 export const db = getFirestore(app);
+export const storage = getStorage(app);
