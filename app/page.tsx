@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { db } from './firebase';
-import { collection, addDoc } from 'firebase/firestore';
+import { collection, addDoc, getDocs } from 'firebase/firestore';
 
 const AddProductForm = () => {
   const [name, setName] = useState('');
@@ -47,4 +47,36 @@ const AddProductForm = () => {
   );
 };
 
-export default AddProductForm;
+const ProductList = () => {
+  const [products, setProducts] = useState<{ id: string; name: string; price: number }[]>([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const snapshot = await getDocs(collection(db, 'products'));
+      const data = snapshot.docs.map((doc) => ({ id: doc.id, ...(doc.data() as any) }));
+      setProducts(data);
+    };
+    fetchData();
+  }, []);
+
+  return (
+    <div>
+      {products.map((item) => (
+        <div key={item.id} className="border p-2 mb-2">
+          <div>🛒 {item.name}</div>
+          <div>💰 ${item.price}</div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+export default function Page() {
+  return (
+    <main className="p-4 max-w-2xl mx-auto">
+      <h1 className="text-xl font-bold mb-4">🛒 Product List</h1>
+      <AddProductForm />
+      <ProductList />
+    </main>
+  );
+}
