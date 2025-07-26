@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import {
-  getFirestore,
   collection,
   getDocs,
   addDoc,
@@ -14,7 +13,7 @@ import {
   uploadBytes,
   getDownloadURL,
 } from 'firebase/storage';
-import { db, app } from './firebase';
+import { db } from './firebase';
 
 type Product = {
   id?: string;
@@ -67,7 +66,7 @@ export default function Page() {
 
     let imageUrl = '';
     if (imageFile) {
-      const storage = getStorage(app);
+      const storage = getStorage();
       const imageRef = ref(storage, `product-images/${Date.now()}_${imageFile.name}`);
       const snapshot = await uploadBytes(imageRef, imageFile);
       imageUrl = await getDownloadURL(snapshot.ref);
