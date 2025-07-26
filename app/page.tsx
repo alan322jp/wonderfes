@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import {
-  getFirestore,
   collection,
   getDocs,
   addDoc,
+  updateDoc,
+  doc,
   Timestamp,
 } from 'firebase/firestore';
-import { db } from './firebase'; // 不再需要 import storage
+import { db } from './firebase';
 
 type Product = {
   id?: string;
@@ -29,19 +30,16 @@ export default function Page() {
     difficulty: '',
     remark: '',
   });
+  const [editId, setEditId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchProducts = async () => {
-      try {
-        const querySnapshot = await getDocs(collection(db, 'products'));
-        const data = querySnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as Product[];
-        setProducts(data);
-      } catch (error) {
-        console.error('讀取資料錯誤：', error);
-      }
+      const querySnapshot = await getDocs(collection(db, 'products'));
+      const data = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Product[];
+      setProducts(data);
     };
     fetchProducts();
   }, []);
@@ -54,29 +52,47 @@ export default function Page() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const productData: Product = {
-      ...formData,
-      createdAt: Timestamp.now(),
-    };
-
-    try {
-      const docRef = await addDoc(collection(db, 'products'), productData);
-      setProducts((prev) => [...prev, { ...productData, id: docRef.id }]);
-      setFormData({
-        phone: '',
-        location: '',
-        price: '',
-        difficulty: '',
-        remark: '',
-      });
-    } catch (error) {
-      console.error('儲存資料失敗：', error);
+    if (editId) {
+      const docRef = doc(db, 'products', editId);
+      await updateDoc(docRef, { ...formData });
+      setProducts((prev) =>
+        prev.map((p) => (p.id === editId ? { ...p, ...formData } : p))
+      );
+      setEditId(null);
+    } else {
+      const newProduct: Product = {
+        ...formData,
+        createdAt: Timestamp.now(),
+      };
+      const docRef = await addDoc(collection(db, 'products'), newProduct);
+      setProducts((prev) => [...prev, { ...newProduct, id: docRef.id }]);
     }
+
+    setFormData({
+      phone: '',
+      location: '',
+      price: '',
+      difficulty: '',
+      remark: '',
+    });
+  };
+
+  const handleEdit = (product: Product) => {
+    setFormData({
+      phone: product.phone,
+      location: product.location,
+      price: product.price,
+      difficulty: product.difficulty,
+      remark: product.remark,
+    });
+    setEditId(product.id ?? null);
   };
 
   return (
     <main className="p-4 max-w-3xl mx-auto">
-      <h1 className="text-xl font-bold mb-4">📥 新增產品資料</h1>
+      <h1 className="text-xl font-bold mb-4">
+        {editId ? '✏️ 編輯資料' : '📥 新增產品資料'}
+      </h1>
       <form onSubmit={handleSubmit} className="space-y-3 mb-6">
         {['phone', 'location', 'price', 'difficulty', 'remark'].map((field) => (
           <input
@@ -93,7 +109,7 @@ export default function Page() {
           type="submit"
           className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
         >
-          儲存
+          {editId ? '更新' : '儲存'}
         </button>
       </form>
 
@@ -106,6 +122,12 @@ export default function Page() {
             <div>💰 價錢：{product.price}</div>
             <div>📈 難買度：{product.difficulty}</div>
             <div>📝 備註：{product.remark}</div>
+            <button
+              onClick={() => handleEdit(product)}
+              className="mt-2 text-sm text-blue-600 underline"
+            >
+              編輯
+            </button>
           </div>
         ))}
       </div>
