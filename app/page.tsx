@@ -188,7 +188,7 @@ export default function Page() {
 
               {product.phone && (
                 <a
-                  href={`https://api.whatsapp.com/send/?phone=852${product.phone}`}
+                  href={`https://api.whatsapp.com/send/?phone=852${product.phone}&text&type=phone_number&app_absent=0`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-block mt-2 px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"
