@@ -8,12 +8,7 @@ import {
   addDoc,
   Timestamp,
 } from 'firebase/firestore';
-import {
-  ref,
-  uploadBytes,
-  getDownloadURL,
-} from 'firebase/storage';
-import { db, storage } from './firebase';
+import { db } from './firebase'; // 不再需要 import storage
 
 type Product = {
   id?: string;
@@ -22,7 +17,6 @@ type Product = {
   price: string;
   difficulty: string;
   remark: string;
-  imageUrl: string;
   createdAt?: Timestamp;
 };
 
@@ -34,10 +28,7 @@ export default function Page() {
     price: '',
     difficulty: '',
     remark: '',
-    imageUrl: '',
   });
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -48,8 +39,8 @@ export default function Page() {
           ...doc.data(),
         })) as Product[];
         setProducts(data);
-      } catch (err) {
-        console.error('讀取資料錯誤：', err);
+      } catch (error) {
+        console.error('讀取資料錯誤：', error);
       }
     };
     fetchProducts();
@@ -60,46 +51,27 @@ export default function Page() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setImageFile(e.target.files[0]);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
 
-    let imageUrl = '';
+    const productData: Product = {
+      ...formData,
+      createdAt: Timestamp.now(),
+    };
+
     try {
-      if (imageFile) {
-        const imageRef = ref(storage, `product-images/${Date.now()}_${imageFile.name}`);
-        const snapshot = await uploadBytes(imageRef, imageFile);
-        imageUrl = await getDownloadURL(snapshot.ref);
-      }
-
-      const productData: Product = {
-        ...formData,
-        imageUrl,
-        createdAt: Timestamp.now(),
-      };
-
       const docRef = await addDoc(collection(db, 'products'), productData);
       setProducts((prev) => [...prev, { ...productData, id: docRef.id }]);
-
       setFormData({
         phone: '',
         location: '',
         price: '',
         difficulty: '',
         remark: '',
-        imageUrl: '',
       });
-      setImageFile(null);
     } catch (error) {
       console.error('儲存資料失敗：', error);
     }
-    setLoading(false);
   };
 
   return (
@@ -117,13 +89,11 @@ export default function Page() {
             required
           />
         ))}
-        <input type="file" accept="image/*" onChange={handleFileChange} className="w-full" />
         <button
           type="submit"
-          disabled={loading}
           className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
         >
-          {loading ? '儲存中...' : '儲存'}
+          儲存
         </button>
       </form>
 
@@ -136,13 +106,6 @@ export default function Page() {
             <div>💰 價錢：{product.price}</div>
             <div>📈 難買度：{product.difficulty}</div>
             <div>📝 備註：{product.remark}</div>
-            {product.imageUrl && (
-              <img
-                src={product.imageUrl}
-                alt="Product"
-                className="w-32 mt-2 border"
-              />
-            )}
           </div>
         ))}
       </div>
